@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Cálculo de Índice de Temperatura-Umidade</title>
+  <style>
+  </style>
+  <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+</head>
+<body style="background-color:grey;">
+ 
+<h1>Cálculo de Índice de Temperatura-Umidade</h1>
+ 
+<div id="results"></div>
+<div id="refreshData"></div>
+<div id="t"></div>
+<div id="h"></div>
+<div id="itu"></div>
+<br>
+<div id="conforto"></div>
+
+<script>
+
+setInterval( "updateMyContent();", 1000 );
+ 
+var temperature = 999;
+var relativeHumidity = 999;
+
+$(function() { 
+       updateMyContent = function(){ 
+                //$('#refreshData').prepend("Message display<br>").fadeIn("slow");
+                var assets = "http://dca.telefonicabeta.com/m2m/v2/services/gaoulekjyrpa/assets/gaoulekjyrpa/data?limit=1&offset=1&sortBy=!samplingTime"; 
+                
+                $.getJSON(assets, function (json) {
+                
+                var st = json.data[0].st;
+                $('#results').html('st: ' + json.data[0].st + "<br>");
+                $('#results').append('ms v: ' + json.data[0].ms.v + "<br>");
+                $('#results').append('ms p: ' + json.data[0].ms.p + "<br>");
+                $('#results').append('ms u: ' + json.data[0].ms.u + "<br>");
+                $('#results').append("<br>");
+                
+                // temperature, relativeHumidity
+                if (json.data[0].ms.p == 'temperature') {
+                  temperature = json.data[0].ms.v;
+                }
+
+                if (json.data[0].ms.p == 'relativeHumidity') {
+                  relativeHumidity = json.data[0].ms.v;
+                }
+                
+                temperatureN = parseFloat(temperature);
+                relativeHumidityN = parseFloat(relativeHumidity) / 10;
+                //relativeHumidityN = parseFloat(relativeHumidity);
+                
+                $('#t').html('temperatura (graus celsius): ' + temperatureN);
+                $('#h').html('umidade: ' + relativeHumidityN * 10);
+                
+                if ( (temperatureN != 999) && (relativeHumidityN != 999))
+                {
+                  // ITU = T - 0.55 (1 - UR )( T - 14 ),
+                  //itu = temperatureN - (0.55 * (1 - relativeHumidityN) * (temperatureN - 14));
+                  //THI= (1.8xT+32) - ((0.55-0.0055xRH) x (1.8xT-26)) Where T=Temperature and RH=Relative Humidity
+                  itu = (1.8 * temperatureN + 32) - ((0.55 - 0.0055 * relativeHumidityN) * (temperatureN - 14));
+                  $('#itu').html("ITU:" + itu);
+                  
+                  // Indica se o clima do ambiente esta confortavel
+                  if (itu <=68)
+                  {
+                    // frio
+                    $('#conforto').html('<span style="color:blue;">FRIO</span>');
+                  }
+                  else if (itu >=69 && itu <=71)
+                  {
+                    // nenhum desconforto
+                  }
+                  else if (itu >=72 && itu <=74)
+                  {
+                    // pequeno desconforto
+                    $('#conforto').html('<span style="color:black;">PEQUENO DESCONFORTO</span>');
+                  }
+                  else if (itu >=75 && itu <=79)
+                  {
+                    // desconforto consideravel
+                    $('#conforto').html('<span style="color:yellow;">DESCONFORTO CONSIDERAVEL</span>');
+                  }
+                  else if (itu >=80 && itu <=89)
+                  {
+                    // grande desconforto
+                    $('#conforto').html('<span style="color:red;">GRANDE DESCONFORTO</span>');
+                  }
+                  else if (itu >=90)
+                  {
+                    // maximo desconforto
+                    $('#conforto').html('<span style="color:red;">MÁXIMO DESCONFORTO</span>');
+                  }
+                }
+              
+              }); 
+       } 
+}); 
+</script>
+ 
+</body>
+</html>
